@@ -1,0 +1,6 @@
+{
+  "name": "RightPDF Converter",
+  "description": "Professional PDF converter, editor, scanner, merger, splitter, and security tools with com.iims.rightpdfconverter package specs.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
