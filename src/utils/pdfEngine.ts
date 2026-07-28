@@ -328,10 +328,47 @@ export async function compressPdfFile(
 }
 
 /**
- * Download Uint8Array as file in browser
+ * Download Uint8Array as file in browser or native Capacitor app
  */
-export function downloadUint8Array(data: Uint8Array, filename: string, mimeType = 'application/pdf') {
+export async function downloadUint8Array(data: Uint8Array, filename: string, mimeType = 'application/pdf') {
   const blob = new Blob([data as unknown as BlobPart], { type: mimeType });
+
+  // Check if running inside Capacitor native container
+  if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+    try {
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const { Share } = await import('@capacitor/share');
+
+      // Convert Uint8Array to base64 string safely
+      let binary = '';
+      const bytes = new Uint8Array(data);
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64Data = btoa(binary);
+
+      // Write file to Cache / Downloads directory
+      const savedFile = await Filesystem.writeFile({
+        path: filename,
+        data: base64Data,
+        directory: Directory.Cache,
+      });
+
+      // Trigger native share sheet or open dialog
+      await Share.share({
+        title: filename,
+        text: `RightPDF generated ${filename}`,
+        url: savedFile.uri,
+        dialogTitle: `Save or Open ${filename}`,
+      });
+      return;
+    } catch (err) {
+      console.warn('Capacitor native download failed, falling back to browser download:', err);
+    }
+  }
+
+  // Standard web browser download fallback
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
