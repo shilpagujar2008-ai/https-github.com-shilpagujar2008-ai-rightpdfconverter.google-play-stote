@@ -2,4 +2,40 @@ include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
 
+// Apply auto-generated Capacitor settings
 apply from: 'capacitor.settings.gradle'
+
+// Helper function to resolve Capacitor module directories robustly
+def resolveNodeModuleDir(String subPath) {
+    def candidatePaths = [
+        "../node_modules/${subPath}",
+        "./node_modules/${subPath}",
+        "../../node_modules/${subPath}"
+    ]
+    for (String relPath : candidatePaths) {
+        def f = new File(settingsDir, relPath)
+        if (f.exists()) {
+            return f
+        }
+    }
+    def defaultPath = new File(settingsDir, "../node_modules/${subPath}")
+    if (!defaultPath.exists()) {
+        logger.error("\n=========================================================================================")
+        logger.error("MISSING DEPENDENCY ERROR:")
+        logger.error("Could not find '${subPath}' at ${defaultPath.absolutePath}")
+        logger.error("Please run 'npm install' in the project root directory before opening in Android Studio.")
+        logger.error("=========================================================================================\n")
+    }
+    return defaultPath
+}
+
+// Re-bind capacitor projects to resolved paths
+if (findProject(':capacitor-android') != null) {
+    findProject(':capacitor-android').projectDir = resolveNodeModuleDir('@capacitor/android/capacitor')
+}
+if (findProject(':capacitor-filesystem') != null) {
+    findProject(':capacitor-filesystem').projectDir = resolveNodeModuleDir('@capacitor/filesystem/android')
+}
+if (findProject(':capacitor-share') != null) {
+    findProject(':capacitor-share').projectDir = resolveNodeModuleDir('@capacitor/share/android')
+}
